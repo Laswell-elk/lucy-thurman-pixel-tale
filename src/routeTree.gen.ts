@@ -10,33 +10,90 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CriadoraRouteImport } from './routes/criadora'
+import { Route as GrimorioRouteImport } from './routes/grimorio'
+import { Route as GuiaRouteImport } from './routes/guia'
+import { Route as JogarRouteImport } from './routes/jogar'
+import { Route as PressKitRouteImport } from './routes/press-kit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CriadoraRoute = CriadoraRouteImport.update({
+  id: '/criadora',
+  path: '/criadora',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GrimorioRoute = GrimorioRouteImport.update({
+  id: '/grimorio',
+  path: '/grimorio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuiaRoute = GuiaRouteImport.update({
+  id: '/guia',
+  path: '/guia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JogarRoute = JogarRouteImport.update({
+  id: '/jogar',
+  path: '/jogar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PressKitRoute = PressKitRouteImport.update({
+  id: '/press-kit',
+  path: '/press-kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/criadora': typeof CriadoraRoute
+  '/grimorio': typeof GrimorioRoute
+  '/guia': typeof GuiaRoute
+  '/jogar': typeof JogarRoute
+  '/press-kit': typeof PressKitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/criadora': typeof CriadoraRoute
+  '/grimorio': typeof GrimorioRoute
+  '/guia': typeof GuiaRoute
+  '/jogar': typeof JogarRoute
+  '/press-kit': typeof PressKitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/criadora': typeof CriadoraRoute
+  '/grimorio': typeof GrimorioRoute
+  '/guia': typeof GuiaRoute
+  '/jogar': typeof JogarRoute
+  '/press-kit': typeof PressKitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/criadora' | '/grimorio' | '/guia' | '/jogar' | '/press-kit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/criadora' | '/grimorio' | '/guia' | '/jogar' | '/press-kit'
+  id:
+    | '__root__'
+    | '/'
+    | '/criadora'
+    | '/grimorio'
+    | '/guia'
+    | '/jogar'
+    | '/press-kit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CriadoraRoute: typeof CriadoraRoute
+  GrimorioRoute: typeof GrimorioRoute
+  GuiaRoute: typeof GuiaRoute
+  JogarRoute: typeof JogarRoute
+  PressKitRoute: typeof PressKitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +105,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/criadora': {
+      id: '/criadora'
+      path: '/criadora'
+      fullPath: '/criadora'
+      preLoaderRoute: typeof CriadoraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grimorio': {
+      id: '/grimorio'
+      path: '/grimorio'
+      fullPath: '/grimorio'
+      preLoaderRoute: typeof GrimorioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guia': {
+      id: '/guia'
+      path: '/guia'
+      fullPath: '/guia'
+      preLoaderRoute: typeof GuiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jogar': {
+      id: '/jogar'
+      path: '/jogar'
+      fullPath: '/jogar'
+      preLoaderRoute: typeof JogarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/press-kit': {
+      id: '/press-kit'
+      path: '/press-kit'
+      fullPath: '/press-kit'
+      preLoaderRoute: typeof PressKitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CriadoraRoute: CriadoraRoute,
+  GrimorioRoute: GrimorioRoute,
+  GuiaRoute: GuiaRoute,
+  JogarRoute: JogarRoute,
+  PressKitRoute: PressKitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

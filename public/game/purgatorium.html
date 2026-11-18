@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PURGATORIUM: Requiem of the Pale Soul | Bullet Hell Gótico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        gothic: ['"Cinzel Decorative"', 'serif'],
+                        serifTitle: ['"Cinzel"', 'serif'],
+                        body: ['"Cormorant Garamond"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        abyss: '#07060a',
+                        cathedral: '#100d17',
+                        crimsonSoul: '#9e1b32',
+                        paleGold: '#d8c39e',
+                        etherealBlue: '#7dd3fc',
+                        spiritViolet: '#a855f7',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --gold-border: rgba(216, 195, 158, 0.35);
+            --crimson-glow: rgba(158, 27, 50, 0.5);
+        }
+
+        body {
+            background-color: #07060a;
+            color: #e8e2d5;
+            font-family: 'Cormorant Garamond', serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(126, 34, 206, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 15% 85%, rgba(158, 27, 50, 0.12) 0%, transparent 45%),
+                linear-gradient(to bottom, #07060a, #0c0912);
+        }
+
+        .gothic-frame {
+            position: relative;
+            background: linear-gradient(145deg, rgba(18, 14, 26, 0.92), rgba(9, 7, 14, 0.96));
+            border: 1px solid var(--gold-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), inset 0 0 25px rgba(168, 85, 247, 0.08);
+        }
+
+        .gothic-frame::before, .gothic-frame::after {
+            content: '❖';
+            position: absolute;
+            color: #d8c39e;
+            font-size: 12px;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .gothic-frame::before { top: 4px; left: 6px; }
+        .gothic-frame::after { bottom: 4px; right: 6px; }
+
+        .gothic-btn {
+            background: linear-gradient(180deg, rgba(35, 22, 46, 0.9) 0%, rgba(18, 11, 24, 0.95) 100%);
+            border: 1px solid rgba(216, 195, 158, 0.45);
+            transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .gothic-btn:hover {
+            border-color: #f3e5ab;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.45), inset 0 0 12px rgba(216, 195, 158, 0.2);
+            transform: translateY(-1px);
+        }
+        .gothic-btn.active {
+            background: linear-gradient(180deg, rgba(136, 19, 55, 0.85) 0%, rgba(65, 10, 28, 0.95) 100%);
+            border-color: #fda4af;
+            box-shadow: 0 0 22px rgba(225, 29, 72, 0.5);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #07060a; }
+        ::-webkit-scrollbar-thumb { background: #3b2d4a; border-radius: 4px; border: 1px solid #d8c39e44; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b21a8; }
+
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+
+        .text-glow-gold { text-shadow: 0 0 14px rgba(216, 195, 158, 0.45); }
+        .text-glow-crimson { text-shadow: 0 0 16px rgba(225, 29, 72, 0.7); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-rose-900 selection:text-amber-100">
+
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-[#07060a]/90 border-b border-amber-200/20 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('trailer')">
+                <div class="w-10 h-10 rounded-full border border-amber-200/60 bg-gradient-to-br from-purple-950 via-rose-950 to-black flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+                    <span class="text-amber-200 text-lg font-gothic">✦</span>
+                </div>
+                <div>
+                    <h1 class="font-gothic text-lg sm:text-xl md:text-2xl font-bold tracking-wider text-amber-100 text-glow-gold leading-none">
+                        PURGATORIUM
+                    </h1>
+                    <p class="font-serifTitle text-[11px] sm:text-xs tracking-[0.22em] text-rose-300/80 uppercase mt-0.5">
+                        Requiem of the Pale Soul • Danmaku
+                    </p>
+                </div>
+            </div>
+
+            <nav class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                <button id="tab-trailer" onclick="switchTab('trailer')" class="gothic-btn active px-3 sm:px-4 py-2 rounded-lg font-serifTitle text-xs sm:text-sm font-semibold tracking-wider text-amber-100 flex items-center gap-1.5">
+                    <span>🎬</span> <span>TRAILER</span>
+                </button>
+                <button id="tab-game" onclick="switchTab('game')" class="gothic-btn px-3 sm:px-4 py-2 rounded-lg font-serifTitle text-xs sm:text-sm font-semibold tracking-wider text-amber-100 flex items-center gap-1.5">
+                    <span>⚔️</span> <span>JOGAR AGORA</span>
+                </button>
+                <button id="tab-grimoire" onclick="switchTab('grimoire')" class="gothic-btn px-3 sm:px-4 py-2 rounded-lg font-serifTitle text-xs sm:text-sm font-semibold tracking-wider text-amber-100 flex items-center gap-1.5">
+                    <span>📜</span> <span>GRIMÓRIO</span>
+                </button>
+                <button id="tab-gdd" onclick="switchTab('gdd')" class="gothic-btn px-3 sm:px-4 py-2 rounded-lg font-serifTitle text-xs sm:text-sm font-semibold tracking-wider text-amber-100 flex items-center gap-1.5">
+                    <span>📐</span> <span>GDD MARKDOWN</span>
+                </button>
+            </nav>
+
+            <div class="hidden lg:flex items-center gap-2">
+                <button id="audioToggleBtn" onclick="toggleAudio()" class="px-3 py-1.5 rounded-lg border border-amber-200/30 bg-purple-950/45 hover:bg-purple-900/50 text-xs font-mono text-amber-200 flex items-center gap-2 transition">
+                    <span id="audioIcon">🔇</span>
+                    <span id="audioLabel">ÁUDIO: OFF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 sm:py-8">
+
+        <!-- SECTION 1: TRAILER -->
+        <section id="section-trailer" class="space-y-6">
+            <div class="gothic-frame rounded-2xl p-2 sm:p-4 overflow-hidden">
+                <div class="flex flex-wrap items-center justify-between gap-2 px-2 pb-3 border-b border-amber-200/15">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                        <span class="font-serifTitle text-xs sm:text-sm tracking-widest text-amber-200 uppercase">
+                            Trailer Oficial Animado em Tempo Real • Motor Danmaku 2D
+                        </span>
+                    </div>
+                    <button onclick="toggleAudio()" class="px-3 py-1 rounded-md border border-amber-200/30 bg-black/50 text-xs font-mono text-amber-200 hover:border-amber-200 transition">
+                        <span class="audio-sync-label">🔊 Ativar Trilha Gótica</span>
+                    </button>
+                </div>
+
+                <div class="relative w-full aspect-video max-h-[560px] bg-[#050408] rounded-xl overflow-hidden mt-3 border border-amber-200/20 shadow-inner">
+                    <canvas id="trailerCanvas" class="w-full h-full"></canvas>
+                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-3 sm:p-5 flex flex-col gap-2">
+                        <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden cursor-pointer" id="trailerProgressBar" onclick="seekTrailer(event)">
+                            <div id="trailerProgressFill" class="h-full bg-gradient-to-r from-purple-500 via-rose-500 to-amber-300 w-0 transition-all duration-100"></div>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 sm:gap-3">
+                                <button id="trailerPlayBtn" onclick="toggleTrailerPlay()" class="px-4 py-1.5 rounded-lg bg-rose-800/90 hover:bg-rose-700 border border-amber-200/50 text-amber-100 font-serifTitle text-xs sm:text-sm font-bold tracking-wider flex items-center gap-1.5 shadow-lg">
+                                    <span id="trailerPlayIcon">⏸</span>
+                                    <span id="trailerPlayText">PAUSAR</span>
+                                </button>
+                                <button onclick="restartTrailer()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-amber-100 font-mono text-xs">
+                                    ↺ Reiniciar
+                                </button>
+                                <span id="trailerTimeLabel" class="font-mono text-xs text-amber-200/80">00:00 / 00:36</span>
+                            </div>
+                            <button onclick="switchTab('game')" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-600/80 to-rose-700/95 hover:from-amber-500 hover:to-rose-600 border border-amber-200 text-white font-serifTitle text-xs sm:text-sm font-bold tracking-wider shadow-[0_0_20px_rgba(225,29,72,0.5)] animate-pulse">
+                                ⚔️ ENTRAR NO PURGATÓRIO (JOGAR)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: PLAYABLE GAME -->
+        <section id="section-game" class="hidden space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div class="lg:col-span-8 flex flex-col items-center">
+                    <div class="gothic-frame rounded-2xl p-2 sm:p-3 w-full max-w-[480px] mx-auto shadow-[0_0_50px_rgba(88,28,135,0.25)]">
+                        <div class="flex items-center justify-between px-2 pb-2 text-xs font-mono text-amber-200/90">
+                            <span id="stageBannerText" class="tracking-wider uppercase text-rose-300 font-bold">ATO I • CATEDRAL DAS CINZAS</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleAudio()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[11px]">
+                                    <span class="audio-sync-label">🔇 Som</span>
+                                </button>
+                                <button onclick="resetFullGame()" class="px-2 py-0.5 rounded bg-rose-950/80 hover:bg-rose-800 border border-rose-400/30 text-[11px]">
+                                    ↺ Reiniciar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="relative w-full aspect-[4/5] bg-[#06040a] rounded-xl overflow-hidden border border-amber-200/30">
+                            <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+                            <div id="gameOverlay" class="absolute inset-0 bg-[#07050c]/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+                                <div class="w-16 h-16 rounded-full border-2 border-amber-200/70 bg-purple-950/60 flex items-center justify-center mb-3 shadow-[0_0_25px_rgba(168,85,247,0.6)]">
+                                    <span class="text-3xl text-amber-100">✦</span>
+                                </div>
+                                <h2 id="overlayTitle" class="font-gothic text-2xl sm:text-3xl font-bold text-amber-100 text-glow-gold mb-2">
+                                    ALMA PÁLIDA
+                                </h2>
+                                <p id="overlaySubtitle" class="font-body text-base sm:text-lg text-rose-200/90 max-w-md mb-4 leading-snug">
+                                    Sobreviva por <strong>3 MINUTOS</strong> no Purgatório sem disparar. Use Parry (<span class="font-mono text-sky-300">SPACE</span>) e Bomb (<span class="font-mono text-amber-300">E</span>).
+                                </p>
+
+                                <div id="overlayStats" class="hidden mb-4 px-5 py-3 rounded-xl bg-black/60 border border-amber-200/25 font-mono text-xs sm:text-sm space-y-1 text-amber-100">
+                                    <div>TEMPO: <span id="finalTimeVal" class="text-rose-300 font-bold">00:00</span></div>
+                                    <div>PONTOS: <span id="finalScoreVal" class="text-amber-300 font-bold">0</span></div>
+                                    <div>GRAZE: <span id="finalGrazeVal" class="text-sky-300 font-bold">0</span></div>
+                                    <div>PARRIES: <span id="finalParryVal" class="text-purple-300 font-bold">0</span></div>
+                                </div>
+
+                                <button id="startGameBtn" onclick="startGame()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-rose-800 via-purple-900 to-rose-900 hover:from-rose-700 hover:to-purple-800 border border-amber-200 text-amber-100 font-serifTitle font-bold tracking-widest text-sm sm:text-base shadow-[0_0_25px_rgba(225,29,72,0.6)] transition transform hover:scale-105">
+                                    ✦ INICIAR RITUAL (3:00) ✦
+                                </button>
+
+                                <div class="mt-4 flex flex-col items-center gap-2 text-xs font-mono">
+                                    <span class="text-stone-400">DIFICULDADE:</span>
+                                    <div class="flex flex-wrap justify-center gap-1.5">
+                                        <button onclick="setDifficulty('facil')" id="diff-facil" class="px-2.5 py-1 rounded border border-white/20 bg-white/5 text-stone-300">FÁCIL</button>
+                                        <button onclick="setDifficulty('medio')" id="diff-medio" class="px-2.5 py-1 rounded border border-amber-300 bg-amber-500/25 text-amber-200">MÉDIO</button>
+                                        <button onclick="setDifficulty('dificil')" id="diff-dificil" class="px-2.5 py-1 rounded border border-white/20 bg-white/5 text-stone-300">DIFÍCIL</button>
+                                        <button onclick="setDifficulty('lunatico')" id="diff-lunatico" class="px-2.5 py-1 rounded border border-white/20 bg-white/5 text-stone-300">LUNÁTICO</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 grid grid-cols-3 gap-2 sm:hidden">
+                            <button id="touchFocusBtn" class="py-2.5 rounded-xl bg-sky-950/80 border border-sky-400/40 text-sky-200 font-mono text-xs font-bold active:bg-sky-800">◎ FOCO</button>
+                            <button onclick="triggerPlayerParry()" class="py-2.5 rounded-xl bg-purple-950/90 border border-purple-400/50 text-purple-200 font-mono text-xs font-bold active:bg-purple-800">✦ PARRY [SPACE]</button>
+                            <button onclick="triggerPlayerBomb()" class="py-2.5 rounded-xl bg-rose-950/90 border border-rose-400/50 text-rose-200 font-mono text-xs font-bold active:bg-rose-800">💥 BOMB [E]</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="gothic-frame rounded-2xl p-5 space-y-4">
+                        <div class="border-b border-amber-200/20 pb-2 flex items-center justify-between">
+                            <h3 class="font-gothic text-lg text-amber-100">STATUS DA ALMA</h3>
+                            <span id="hudDifficultyBadge" class="font-mono text-[11px] px-2 py-0.5 rounded bg-amber-950 border border-amber-400/40 text-amber-200">MÉDIO</span>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-rose-950/60 via-purple-950/60 to-rose-950/60 p-3 rounded-xl border border-rose-400/35 flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] font-mono text-rose-300 uppercase tracking-wider">Sobrevivência</div>
+                                <div class="text-xs font-body italic text-stone-300">Resista 3 minutos</div>
+                            </div>
+                            <div id="hudSurvivalTimer" class="font-mono text-2xl font-bold text-amber-100 text-glow-gold">03:00.0</div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 font-mono">
+                            <div class="bg-black/40 p-2.5 rounded-lg border border-white/10">
+                                <div class="text-[10px] text-stone-400 uppercase">Pontos</div>
+                                <div id="hudScore" class="text-base sm:text-lg font-bold text-amber-200">00000000</div>
+                            </div>
+                            <div class="bg-black/40 p-2.5 rounded-lg border border-white/10">
+                                <div class="text-[10px] text-stone-400 uppercase">Recorde</div>
+                                <div id="hudHighScore" class="text-base sm:text-lg font-bold text-amber-400/90">00050000</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between bg-black/35 px-3 py-2.5 rounded-lg border border-rose-500/20">
+                            <span class="font-serifTitle text-sm text-rose-200 font-semibold">VIDAS</span>
+                            <div id="hudLives" class="flex items-center gap-1.5 text-xl text-rose-500">
+                                <span>♥</span><span>♥</span><span>♥</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5 bg-black/45 p-3 rounded-xl border border-amber-500/25">
+                            <div class="flex items-center justify-between text-xs font-mono">
+                                <span class="text-amber-200 font-bold">BOMBS / RISK [E]</span>
+                                <span id="hudBombsCount" class="text-amber-300 font-bold">2 / 5</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 text-lg" id="hudBombs">
+                                <span class="text-amber-300">✦</span><span class="text-amber-300">✦</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-stone-900 rounded-full overflow-hidden border border-white/15 p-0.5">
+                                <div id="hudRiskBar" class="h-full rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-500 w-0 transition-all duration-75"></div>
+                            </div>
+                            <p class="text-[10px] text-stone-400 font-body italic">Fique perto das bullets para carregar Bomb automaticamente.</p>
+                        </div>
+
+                        <div class="space-y-1.5 bg-black/45 p-3 rounded-xl border border-sky-400/25">
+                            <div class="flex items-center justify-between text-xs font-mono">
+                                <span class="text-sky-200 font-bold">PARRY (3.0s) [SPACE]</span>
+                                <span id="hudParryStatus" class="text-emerald-400 font-bold">PRONTO</span>
+                            </div>
+                            <div class="w-full h-3 bg-stone-900 rounded-full overflow-hidden border border-white/15 p-0.5">
+                                <div id="hudParryBar" class="h-full rounded-full bg-gradient-to-r from-sky-400 via-purple-400 to-amber-200 w-full"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 font-mono text-xs">
+                            <div class="bg-black/35 p-2.5 rounded-lg border border-white/10 flex justify-between items-center">
+                                <span class="text-stone-400">GRAZE:</span>
+                                <span id="hudGraze" class="text-sky-300 font-bold">0</span>
+                            </div>
+                            <div class="bg-black/35 p-2.5 rounded-lg border border-white/10 flex justify-between items-center">
+                                <span class="text-stone-400">GUARDIÃ:</span>
+                                <span id="hudBossStage" class="text-rose-300 font-bold">1 / 3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: GRIMOIRE -->
+        <section id="section-grimoire" class="hidden space-y-8">
+            <div class="text-center max-w-3xl mx-auto space-y-2">
+                <h2 class="font-gothic text-2xl sm:text-4xl text-amber-100 text-glow-gold">GRIMÓRIO DO PURGATÓRIO</h2>
+                <p class="font-body text-lg text-stone-300">Registros arcanos da Alma Pálida e das Três Guardiãs Góticas.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="gothic-frame rounded-2xl p-5 flex flex-col sm:flex-row gap-5 items-center">
+                    <canvas id="portrait-player" width="160" height="200" class="w-36 h-44 rounded-xl border border-sky-300/40 bg-[#090712] shrink-0"></canvas>
+                    <div class="space-y-2 text-center sm:text-left">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-sky-950 text-sky-300 border border-sky-400/30">PROTAGONISTA</span>
+                        <h3 class="font-gothic text-xl text-amber-100">Elise, a Criança do Véu Branco</h3>
+                        <p class="text-sm text-stone-300 leading-relaxed">Garota de pele pálida, cabelos loiros médios, olhos castanhos e vestido branco esvoaçante que purifica maldições espiritualmente.</p>
+                    </div>
+                </div>
+                <div class="gothic-frame rounded-2xl p-5 flex flex-col sm:flex-row gap-5 items-center">
+                    <canvas id="portrait-boss1" width="160" height="200" class="w-36 h-44 rounded-xl border border-purple-400/40 bg-[#090712] shrink-0"></canvas>
+                    <div class="space-y-2 text-center sm:text-left">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-purple-950 text-purple-300 border border-purple-400/30">BOSS I</span>
+                        <h3 class="font-gothic text-xl text-purple-200">Seraphina, Tecelã de Cinzas</h3>
+                        <p class="text-sm text-stone-300 leading-relaxed">Guarda o primeiro portão com anéis circulares hipnóticos e chuvas aleatórias.</p>
+                    </div>
+                </div>
+                <div class="gothic-frame rounded-2xl p-5 flex flex-col sm:flex-row gap-5 items-center">
+                    <canvas id="portrait-boss2" width="160" height="200" class="w-36 h-44 rounded-xl border border-rose-500/40 bg-[#090712] shrink-0"></canvas>
+                    <div class="space-y-2 text-center sm:text-left">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-rose-950 text-rose-300 border border-rose-400/30">BOSS II</span>
+                        <h3 class="font-gothic text-xl text-rose-200">Carmilla, Dama do Relicário</h3>
+                        <p class="text-sm text-stone-300 leading-relaxed">Invoca feixes de laser cortantes e esferas vampíricas perseguidoras.</p>
+                    </div>
+                </div>
+                <div class="gothic-frame rounded-2xl p-5 flex flex-col sm:flex-row gap-5 items-center">
+                    <canvas id="portrait-boss3" width="160" height="200" class="w-36 h-44 rounded-xl border border-amber-300/50 bg-[#090712] shrink-0"></canvas>
+                    <div class="space-y-2 text-center sm:text-left">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-amber-950 text-amber-300 border border-amber-400/30">BOSS FINAL</span>
+                        <h3 class="font-gothic text-xl text-amber-200">Beatrice, Juíza do Abismo</h3>
+                        <p class="text-sm text-stone-300 leading-relaxed">Serafim caída que domina todos os 4 tipos de projéteis e 3 padrões de Danmaku.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: GDD MARKDOWN -->
+        <section id="section-gdd" class="hidden space-y-4">
+            <div class="gothic-frame rounded-2xl p-5 sm:p-6 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/20 pb-3">
+                    <div>
+                        <h2 class="font-gothic text-xl sm:text-2xl text-amber-100">DOCUMENTO DE ESCOPO (GDD EM MARKDOWN)</h2>
+                        <p class="text-sm text-stone-400">Especificação técnica pronta para copiar.</p>
+                    </div>
+                    <button onclick="copyMarkdownGDD()" class="px-4 py-2 rounded-xl bg-amber-600/80 hover:bg-amber-500 border border-amber-200 text-white font-serifTitle text-xs sm:text-sm font-bold tracking-wider flex items-center gap-2 shadow-lg transition">
+                        <span>📋</span> <span>COPIAR MARKDOWN</span>
+                    </button>
+                </div>
+                <textarea id="gddMarkdownSource" readonly class="w-full h-[460px] bg-[#050408] text-amber-100/90 font-mono text-xs p-4 rounded-xl border border-amber-200/25 focus:outline-none leading-relaxed resize-y"># 🕯️ PURGATORIUM: Requiem of the Pale Soul
+> Gênero: Bullet Hell / Danmaku de Sobrevivência Pura (3 Minutos, Sem Tiro)
+> Estética: Dark Gothic Touhou
+
+1. Protagonista: Elise (Vestido branco, cabelos loiros, pele pálida).
+2. Mecânicas: Parry (SPACE, CD 3s), Bomb (E), Graze Risk Meter.
+3. Bosses: Seraphina, Carmilla, Beatrice.
+4. Dificuldades: Fácil, Médio, Difícil, Lunático.</textarea>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 pointer-events-none opacity-0 transform translate-y-4 transition-all duration-300">
+        <div class="px-5 py-3 rounded-xl bg-[#160f24] border border-amber-300/60 text-amber-100 font-serifTitle text-sm shadow-[0_0_25px_rgba(168,85,247,0.6)] flex items-center gap-2.5">
+            <span class="text-amber-300 text-lg">✦</span>
+            <span id="toastMessage">Ação concluída!</span>
+        </div>
+    </div>
+
+    <script>
+        let activeTab = 'trailer';
+
+        function switchTab(tabName) {
+            activeTab = tabName;
+            ['trailer', 'game', 'grimoire', 'gdd'].forEach(t => {
+                const sec = document.getElementById(`section-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if (sec) sec.classList.toggle('hidden', t !== tabName);
+                if (btn) btn.classList.toggle('active', t === tabName);
+            });
+            if (tabName === 'game') resizeGameCanvas();
+            else if (tabName === 'trailer') resizeTrailerCanvas();
+            else if (tabName === 'grimoire') renderAllGrimoirePortraits();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            const msgEl = document.getElementById('toastMessage');
+            msgEl.textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 2800);
+        }
+
+        function copyMarkdownGDD() {
+            const textarea = document.getElementById('gddMarkdownSource');
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('GDD copiado para a área de transferência!');
+            } catch (err) {
+                showToast('Pressione Ctrl+C para copiar.');
+            }
+        }
+
+        // Web Audio Engine
+        class GothicAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = false;
+                this.bgmTimer = null;
+                this.step = 0;
+                this.notes = [293.66, 349.23, 440.00, 587.33, 554.37, 440.00, 349.23, 329.63, 261.63, 329.63, 392.00, 523.25];
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            toggle() {
+                this.init();
+                this.enabled = !this.enabled;
+                this.updateUI();
+                if (this.enabled) this.startBGM();
+                else this.stopBGM();
+                return this.enabled;
+            }
+            updateUI() {
+                const icon = document.getElementById('audioIcon');
+                const label = document.getElementById('audioLabel');
+                if (icon) icon.textContent = this.enabled ? '🔊' : '🔇';
+                if (label) label.textContent = this.enabled ? 'ÁUDIO: ON' : 'ÁUDIO: OFF';
+            }
+            startBGM() {
+                if (this.bgmTimer) clearInterval(this.bgmTimer);
+                this.bgmTimer = setInterval(() => {
+                    if (!this.enabled || !this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const freq = this.notes[this.step % this.notes.length];
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.23);
+                    this.step++;
+                }, 160);
+            }
+            stopBGM() {
+                if (this.bgmTimer) { clearInterval(this.bgmTimer); this.bgmTimer = null; }
+            }
+            playGrazeSFX() {
+                if (!this.enabled || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1600, now);
+                osc.frequency.exponentialRampToValueAtTime(2400, now + 0.04);
+                gain.gain.setValueAtTime(0.02, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+            playParrySFX() {
+                if (!this.enabled || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 783.99, 1046.50].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.025);
+                    gain.gain.setValueAtTime(0.06, now + idx * 0.025);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.025);
+                    osc.stop(now + 0.36);
+                });
+            }
+            playBombSFX() {
+                if (!this.enabled || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(55, now + 0.6);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.66);
+            }
+            playHitSFX() {
+                if (!this.enabled || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.exponentialRampToValueAtTime(35, now + 0.3);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.33);
+            }
+        }
+
+        const audioEngine = new GothicAudioEngine();
+        function toggleAudio() { audioEngine.toggle(); }
+
+        // Sprite Renderers
+        function drawProtagonistSprite(ctx, x, y, time, scale = 0.78, isFocused = false, parryFlash = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            const sway = Math.sin(time * 4.5) * 2;
+            const dressWave = Math.sin(time * 6) * 2.5;
+
+            const auraGrad = ctx.createRadialGradient(0, 0, 3, 0, 0, 26);
+            auraGrad.addColorStop(0, 'rgba(186, 230, 253, 0.55)');
+            auraGrad.addColorStop(0.5, 'rgba(168, 85, 247, 0.2)');
+            auraGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+            ctx.fillStyle = auraGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 26, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#e6c875';
+            ctx.beginPath();
+            ctx.moveTo(-10, -10);
+            ctx.quadraticCurveTo(-14 + sway, 5, -11 + sway * 1.3, 14);
+            ctx.lineTo(11 + sway * 1.3, 14);
+            ctx.quadraticCurveTo(14 + sway, 5, 10, -10);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-5, -2);
+            ctx.lineTo(-13 - dressWave, 17);
+            ctx.quadraticCurveTo(0, 21 + dressWave * 0.5, 13 + dressWave, 17);
+            ctx.lineTo(5, -2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#fff5ee';
+            ctx.beginPath();
+            ctx.arc(0, -10, 8.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#5c3a21';
+            ctx.beginPath();
+            ctx.ellipse(-3.2, -9.5, 1.4, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(3.2, -9.5, 1.4, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f3d98b';
+            ctx.beginPath();
+            ctx.arc(0, -12, 9, Math.PI, Math.PI * 2);
+            ctx.lineTo(9 + sway * 0.5, -2);
+            ctx.lineTo(5, -9);
+            ctx.lineTo(0, -7);
+            ctx.lineTo(-5, -9);
+            ctx.lineTo(-9 + sway * 0.5, -2);
+            ctx.closePath();
+            ctx.fill();
+
+            if (isFocused) {
+                ctx.save();
+                ctx.rotate(time * 2.5);
+                ctx.strokeStyle = 'rgba(125, 211, 252, 0.85)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.arc(0, 1, 14, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(0, 1, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#e11d48';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+
+            if (parryFlash > 0) {
+                const radius = (1 - parryFlash) * 65 + 12;
+                ctx.strokeStyle = `rgba(186, 230, 253, ${parryFlash})`;
+                ctx.lineWidth = 3.5 * parryFlash;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawBossSprite(ctx, bossIndex, x, y, time, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            const hover = Math.sin(time * 3) * 4;
+            ctx.translate(0, hover);
+
+            const themes = [
+                { primary: '#581c87', secondary: '#c084fc', accent: '#e9d5ff', hair: '#cbd5e1', eyes: '#a855f7', wingColor: 'rgba(192, 132, 252, 0.35)' },
+                { primary: '#881337', secondary: '#f43f5e', accent: '#fecdd3', hair: '#1e1b2e', eyes: '#ef4444', wingColor: 'rgba(244, 63, 94, 0.35)' },
+                { primary: '#1e1b4b', secondary: '#fbbf24', accent: '#fef3c7', hair: '#fef9c3', eyes: '#f59e0b', wingColor: 'rgba(251, 191, 36, 0.38)' }
+            ];
+            const th = themes[bossIndex % themes.length];
+
+            ctx.save();
+            ctx.rotate(time * 0.8);
+            ctx.strokeStyle = th.wingColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 52, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            [-1, 1].forEach(dir => {
+                ctx.save();
+                ctx.scale(dir, 1);
+                ctx.fillStyle = th.wingColor;
+                ctx.beginPath();
+                ctx.moveTo(8, -5);
+                ctx.bezierCurveTo(32, -30, 55, -12, 45, 10);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            });
+
+            ctx.fillStyle = th.primary;
+            ctx.beginPath();
+            ctx.moveTo(-8, -4);
+            ctx.lineTo(-20, 24);
+            ctx.quadraticCurveTo(0, 29, 20, 24);
+            ctx.lineTo(8, -4);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#fff5ee';
+            ctx.beginPath();
+            ctx.arc(0, -14, 11, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = th.eyes;
+            ctx.beginPath();
+            ctx.ellipse(-4, -13, 2, 2.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(4, -13, 2, 2.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function renderAllGrimoirePortraits() {
+            const pCanvas = document.getElementById('portrait-player');
+            if (pCanvas) {
+                const ctx = pCanvas.getContext('2d');
+                ctx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+                drawProtagonistSprite(ctx, 80, 105, 1.2, 2.4, true, 0);
+            }
+            [0, 1, 2].forEach(idx => {
+                const bCanvas = document.getElementById(`portrait-boss${idx + 1}`);
+                if (bCanvas) {
+                    const ctx = bCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, bCanvas.width, bCanvas.height);
+                    drawBossSprite(ctx, idx, 80, 105, 1.5 + idx, 1.6);
+                }
+            });
+        }
+
+        // Trailer Canvas Engine
+        const trailerCanvas = document.getElementById('trailerCanvas');
+        const trailerCtx = trailerCanvas.getContext('2d');
+        let trailerPlaying = true;
+        let trailerTime = 0;
+        const TRAILER_DURATION = 36;
+        let trailerBullets = [];
+        let trailerParticles = [];
+
+        function resizeTrailerCanvas() {
+            if (!trailerCanvas) return;
+            const rect = trailerCanvas.parentElement.getBoundingClientRect();
+            trailerCanvas.width = Math.max(640, rect.width);
+            trailerCanvas.height = Math.max(360, rect.height);
+        }
+
+        function toggleTrailerPlay() {
+            trailerPlaying = !trailerPlaying;
+            document.getElementById('trailerPlayIcon').textContent = trailerPlaying ? '⏸' : '▶';
+            document.getElementById('trailerPlayText').textContent = trailerPlaying ? 'PAUSAR' : 'ASSISTIR';
+        }
+
+        function restartTrailer() {
+            trailerTime = 0;
+            trailerBullets = [];
+            trailerParticles = [];
+            trailerPlaying = true;
+        }
+
+        function seekTrailer(e) {
+            const bar = document.getElementById('trailerProgressBar');
+            const rect = bar.getBoundingClientRect();
+            trailerTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * TRAILER_DURATION;
+            trailerBullets = [];
+        }
+
+        function updateAndRenderTrailer(dt) {
+            if (activeTab !== 'trailer') return;
+            const w = trailerCanvas.width;
+            const h = trailerCanvas.height;
+
+            if (trailerPlaying) {
+                trailerTime += dt;
+                if (trailerTime >= TRAILER_DURATION) trailerTime = 0;
+            }
+
+            document.getElementById('trailerProgressFill').style.width = `${(trailerTime / TRAILER_DURATION) * 100}%`;
+            document.getElementById('trailerTimeLabel').textContent = `00:${String(Math.floor(trailerTime)).padStart(2, '0')} / 00:${TRAILER_DURATION}`;
+
+            trailerCtx.fillStyle = '#07040e';
+            trailerCtx.fillRect(0, 0, w, h);
+
+            if (trailerPlaying && trailerParticles.length < 50) {
+                trailerParticles.push({
+                    x: Math.random() * w,
+                    y: h + 10,
+                    vy: -20 - Math.random() * 30,
+                    vx: (Math.random() - 0.5) * 15,
+                    size: 1.5 + Math.random() * 2,
+                    alpha: 0.2 + Math.random() * 0.5
+                });
+            }
+            trailerParticles.forEach((p, idx) => {
+                if (trailerPlaying) { p.x += p.vx * dt; p.y += p.vy * dt; }
+                trailerCtx.fillStyle = `rgba(244, 114, 182, ${p.alpha})`;
+                trailerCtx.beginPath();
+                trailerCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                trailerCtx.fill();
+                if (p.y < -10) trailerParticles.splice(idx, 1);
+            });
+
+            let captionTop = 'PURGATORIUM: REQUIEM OF THE PALE SOUL';
+            let captionMain = 'BULLET HELL GÓTICO INSPIRADO EM TOUHOU';
+            let captionSub = 'Sobreviva por 3 minutos sem disparar. Use Parry e Bomb!';
+
+            if (trailerTime < 12) {
+                drawProtagonistSprite(trailerCtx, w * 0.5, h * 0.52, trailerTime, 2.2, true, 0);
+            } else if (trailerTime < 24) {
+                const bIdx = Math.floor((trailerTime - 12) / 4) % 3;
+                drawBossSprite(trailerCtx, bIdx, w * 0.5, h * 0.44, trailerTime, 2.0);
+            } else {
+                drawProtagonistSprite(trailerCtx, w * 0.5, h * 0.65, trailerTime, 1.8, true, 0.5);
+            }
+
+            trailerCtx.fillStyle = 'rgba(7, 5, 12, 0.8)';
+            trailerCtx.fillRect(w * 0.1, h - 74, w * 0.8, 52);
+            trailerCtx.strokeStyle = 'rgba(216, 195, 158, 0.35)';
+            trailerCtx.strokeRect(w * 0.1, h - 74, w * 0.8, 52);
+
+            trailerCtx.font = '700 17px "Cinzel Decorative", serif';
+            trailerCtx.textAlign = 'center';
+            trailerCtx.fillStyle = '#fef3c7';
+            trailerCtx.fillText(captionMain, w * 0.5, h - 48);
+
+            trailerCtx.font = 'italic 13px "Cormorant Garamond", serif';
+            trailerCtx.fillStyle = '#cbd5e1';
+            trailerCtx.fillText(captionSub, w * 0.5, h - 30);
+        }
+
+        // Playable Bullet Hell Engine
+        const gameCanvas = document.getElementById('gameCanvas');
+        const gCtx = gameCanvas.getContext('2d');
+        const GAME_W = 480;
+        const GAME_H = 600;
+        gameCanvas.width = GAME_W;
+        gameCanvas.height = GAME_H;
+
+        function resizeGameCanvas() {
+            gameCanvas.width = GAME_W;
+            gameCanvas.height = GAME_H;
+        }
+
+        const DIFFICULTY_CONFIG = {
+            facil: { label: 'FÁCIL', speedMult: 0.85, densityMult: 0.8, rateMult: 1.2, scoreMult: 1.0 },
+            medio: { label: 'MÉDIO', speedMult: 1.0, densityMult: 1.0, rateMult: 1.0, scoreMult: 1.5 },
+            dificil: { label: 'DIFÍCIL', speedMult: 1.25, densityMult: 1.35, rateMult: 0.78, scoreMult: 2.2 },
+            lunatico: { label: 'LUNÁTICO', speedMult: 1.5, densityMult: 1.75, rateMult: 0.6, scoreMult: 3.5 }
+        };
+
+        let difficulty = 'medio';
+        let gameState = 'menu';
+        const SURVIVAL_GOAL_SECONDS = 180.0;
+        let survivalRemaining = SURVIVAL_GOAL_SECONDS;
+        let score = 0;
+        let highScore = 50000;
+        let grazeCount = 0;
+        let parryCount = 0;
+        let screenShake = 0;
+        let bgScroll = 0;
+        let gameTime = 0;
+
+        const player = {
+            x: GAME_W / 2,
+            y: GAME_H - 95,
+            hitboxRadius: 2.2,
+            grazeRadius: 28,
+            speed: 260,
+            focusSpeed: 105,
+            lives: 3,
+            bombs: 2,
+            maxBombs: 5,
+            bombCharge: 0,
+            invulnTimer: 0,
+            parryCooldown: 0,
+            parryMaxCooldown: 3.0,
+            parryActiveTimer: 0,
+            isFocused: false
+        };
+
+        const BOSS_DATA = [
+            { name: 'Seraphina, Tecelã de Cinzas', title: 'ATO I • CATEDRAL DAS CINZAS', color: '#c084fc', accent: '#e9d5ff', spellCard: '「Anéis Concêntricos do Purgatório」' },
+            { name: 'Carmilla, Dama do Relicário', title: 'ATO II • RELICÁRIO CARMESIM', color: '#fb7185', accent: '#fecdd3', spellCard: '「Feixes de Laser Carmesim & Orbes」' },
+            { name: 'Beatrice, Juíza do Abismo', title: 'ATO III • ABISMO BRANCO', color: '#fbbf24', accent: '#fef3c7', spellCard: '「Sinfonia Final Danmaku & Absolução」' }
+        ];
+
+        let currentBossIdx = 0;
+        let boss = { x: GAME_W / 2, y: 115, targetX: GAME_W / 2, targetY: 115, moveTimer: 0, attackTimer: 0, spiralAngle: 0, laserTimer: 0, staggerTimer: 0, hitFlash: 0 };
+        let enemyBullets = [];
+        let reflectedOrbs = [];
+        let particles = [];
+        let floatingTexts = [];
+        const keys = {};
+
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'Space') { e.preventDefault(); triggerPlayerParry(); }
+            if (e.code === 'KeyE') { e.preventDefault(); triggerPlayerBomb(); }
+        });
+        window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            ['facil', 'medio', 'dificil', 'lunatico'].forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                if (btn) {
+                    btn.className = d === diff 
+                        ? 'px-2.5 py-1 rounded border border-amber-300 bg-amber-500/25 text-amber-200' 
+                        : 'px-2.5 py-1 rounded border border-white/20 bg-white/5 text-stone-300';
+                }
+            });
+            document.getElementById('hudDifficultyBadge').textContent = DIFFICULTY_CONFIG[diff].label;
+        }
+
+        function formatSurvivalClock(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            const ms = Math.floor((sec % 1) * 10);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            survivalRemaining = SURVIVAL_GOAL_SECONDS;
+            score = 0;
+            grazeCount = 0;
+            parryCount = 0;
+            player.lives = 3;
+            player.bombs = 2;
+            player.bombCharge = 0;
+            player.invulnTimer = 2.0;
+            player.parryCooldown = 0;
+            player.x = GAME_W / 2;
+            player.y = GAME_H - 95;
+
+            document.getElementById('gameOverlay').classList.add('hidden');
+            document.getElementById('overlayStats').classList.add('hidden');
+
+            reflectedOrbs = [];
+            enemyBullets = [];
+            particles = [];
+            floatingTexts = [];
+            loadBoss(0);
+            updateHUD();
+        }
+
+        function resetFullGame() {
+            gameState = 'menu';
+            document.getElementById('gameOverlay').classList.remove('hidden');
+        }
+
+        function loadBoss(idx) {
+            currentBossIdx = idx;
+            const data = BOSS_DATA[idx];
+            boss.x = GAME_W / 2;
+            boss.y = 115;
+            boss.moveTimer = 1.0;
+            boss.attackTimer = 0.3;
+            boss.laserTimer = 1.5;
+            boss.staggerTimer = 0;
+            document.getElementById('stageBannerText').textContent = data.title;
+            document.getElementById('hudBossStage').textContent = `${idx + 1} / 3`;
+            addFloatingText(GAME_W / 2, 175, data.spellCard, data.accent);
+        }
+
+        function triggerPlayerParry() {
+            if (gameState !== 'playing' || player.parryCooldown > 0) return;
+            player.parryCooldown = player.parryMaxCooldown;
+            player.parryActiveTimer = 0.45;
+            parryCount++;
+            audioEngine.playParrySFX();
+            screenShake = 6;
+
+            let absorbed = 0;
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const b = enemyBullets[i];
+                if (b.type === 'laser') continue;
+                if (Math.hypot(b.x - player.x, b.y - player.y) <= 100) {
+                    absorbed++;
+                    spawnParticles(b.x, b.y, '#7dd3fc', 5);
+                    enemyBullets.splice(i, 1);
+                    reflectedOrbs.push({ x: b.x, y: b.y, vx: (boss.x - b.x) * 2, vy: -500 });
+                }
+            }
+
+            if (absorbed > 0) {
+                score += absorbed * 400;
+                addFloatingText(player.x, player.y - 25, `PARRY! +${absorbed * 400}`, '#7dd3fc');
+            } else {
+                addFloatingText(player.x, player.y - 25, 'PULSO ESPIRITUAL', '#cbd5e1');
+            }
+            updateHUD();
+        }
+
+        function triggerPlayerBomb() {
+            if (gameState !== 'playing') return;
+            if (player.bombs <= 0 && player.bombCharge < 1.0) {
+                addFloatingText(player.x, player.y - 25, 'BOMB ESGOTADA!', '#f87171');
+                return;
+            }
+
+            if (player.bombs > 0) player.bombs--;
+            else player.bombCharge = 0;
+
+            player.invulnTimer = 2.5;
+            screenShake = 16;
+            audioEngine.playBombSFX();
+
+            const cleared = enemyBullets.length;
+            enemyBullets = [];
+            boss.staggerTimer = 1.2;
+            score += cleared * 100 + 3000;
+
+            addFloatingText(GAME_W / 2, GAME_H / 2, '✦ PURIFICAÇÃO TOTAL ✦', '#fef08a');
+            updateHUD();
+        }
+
+        function handlePlayerHit() {
+            if (player.invulnTimer > 0 || player.parryActiveTimer > 0) return;
+            player.lives--;
+            screenShake = 16;
+            audioEngine.playHitSFX();
+            spawnParticles(player.x, player.y, '#f43f5e', 40);
+
+            enemyBullets = enemyBullets.filter(b => Math.hypot(b.x - player.x, b.y - player.y) > 150);
+
+            if (player.lives <= 0) {
+                player.lives = 0;
+                updateHUD();
+                gameState = 'gameover';
+                showEndOverlay(false);
+            } else {
+                player.invulnTimer = 2.5;
+                player.x = GAME_W / 2;
+                player.y = GAME_H - 80;
+                addFloatingText(player.x, player.y - 28, 'ALMA FERIDA! -1 VIDA', '#fb7185');
+                updateHUD();
+            }
+        }
+
+        function showEndOverlay(isVictory) {
+            const overlay = document.getElementById('gameOverlay');
+            const title = document.getElementById('overlayTitle');
+            const sub = document.getElementById('overlaySubtitle');
+            const stats = document.getElementById('overlayStats');
+            const btn = document.getElementById('startGameBtn');
+
+            if (score > highScore) highScore = score;
+            updateHUD();
+
+            overlay.classList.remove('hidden');
+            stats.classList.remove('hidden');
+
+            const survived = SURVIVAL_GOAL_SECONDS - survivalRemaining;
+            document.getElementById('finalTimeVal').textContent = `${String(Math.floor(survived / 60)).padStart(2, '0')}:${String(Math.floor(survived % 60)).padStart(2, '0')} / 03:00`;
+            document.getElementById('finalScoreVal').textContent = score.toLocaleString('pt-BR');
+            document.getElementById('finalGrazeVal').textContent = grazeCount;
+            document.getElementById('finalParryVal').textContent = parryCount;
+
+            if (isVictory) {
+                title.textContent = '✦ 3 MINUTOS SOBREVIVIDOS! ✦';
+                title.className = 'font-gothic text-2xl sm:text-3xl font-bold text-amber-200 text-glow-gold mb-2';
+                sub.textContent = 'Você resistiu ao julgamento das 3 Guardiãs no Purgatório!';
+                btn.textContent = '✦ SOBREVIVER NOVAMENTE ✦';
+            } else {
+                title.textContent = 'ALMA DISSIPADA';
+                title.className = 'font-gothic text-2xl sm:text-3xl font-bold text-rose-400 text-glow-crimson mb-2';
+                sub.textContent = 'As sombras consumiram sua luz antes dos 3 minutos.';
+                btn.textContent = '↺ TENTAR NOVAMENTE';
+            }
+        }
+
+        function spawnEnemyBullet(opts) {
+            const cfg = DIFFICULTY_CONFIG[difficulty];
+            enemyBullets.push({
+                type: opts.type || 'projectile',
+                pattern: opts.pattern || 'pattern',
+                x: opts.x,
+                y: opts.y,
+                vx: (opts.vx || 0) * cfg.speedMult,
+                vy: (opts.vy || 0) * cfg.speedMult,
+                angle: opts.angle || 0,
+                speed: (opts.speed || 160) * cfg.speedMult,
+                radius: opts.radius || 4.5,
+                color: opts.color || '#c084fc',
+                grazed: false,
+                age: 0,
+                maxAge: 12,
+                length: 600,
+                width: 10,
+                warnTime: 0.8,
+                activeTime: 0.6
+            });
+        }
+
+        function updateBossAI(dt) {
+            const cfg = DIFFICULTY_CONFIG[difficulty];
+            const elapsed = SURVIVAL_GOAL_SECONDS - survivalRemaining;
+            const expectedBoss = Math.min(2, Math.floor(elapsed / 60));
+
+            if (expectedBoss !== currentBossIdx) {
+                screenShake = 12;
+                audioEngine.playBombSFX();
+                enemyBullets = [];
+                loadBoss(expectedBoss);
+            }
+
+            boss.moveTimer -= dt;
+            if (boss.moveTimer <= 0) {
+                boss.moveTimer = 1.8 * cfg.rateMult;
+                boss.targetX = 60 + Math.random() * (GAME_W - 120);
+                boss.targetY = 70 + Math.random() * 70;
+            }
+            boss.x += (boss.targetX - boss.x) * dt * 2.5;
+            boss.y += (boss.targetY - boss.y) * dt * 2.5;
+            if (boss.hitFlash > 0) boss.hitFlash -= dt;
+
+            boss.attackTimer -= dt;
+            boss.spiralAngle += dt * 2.4;
+
+            if (boss.attackTimer <= 0) {
+                boss.attackTimer = 0.65 * cfg.rateMult * (boss.staggerTimer > 0 ? 1.5 : 1.0);
+                const count = Math.round(10 * cfg.densityMult);
+                for (let i = 0; i < count; i++) {
+                    const ang = boss.spiralAngle + (i * Math.PI * 2) / count;
+                    spawnEnemyBullet({
+                        type: currentBossIdx === 1 ? 'sphere' : 'circular',
+                        x: boss.x,
+                        y: boss.y,
+                        vx: Math.cos(ang) * 140,
+                        vy: Math.sin(ang) * 140,
+                        color: currentBossIdx === 0 ? '#c084fc' : currentBossIdx === 1 ? '#fb7185' : '#fbbf24'
+                    });
+                }
+            }
+        }
+
+        function updateGame(dt) {
+            if (activeTab !== 'game') return;
+            gameTime += dt;
+            bgScroll = (bgScroll + 45 * dt) % 120;
+            if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 30);
+            if (gameState !== 'playing') return;
+
+            survivalRemaining -= dt;
+            score += Math.round(100 * dt);
+
+            if (survivalRemaining <= 0) {
+                survivalRemaining = 0;
+                gameState = 'victory';
+                showEndOverlay(true);
+                return;
+            }
+
+            if (player.invulnTimer > 0) player.invulnTimer -= dt;
+            if (player.parryCooldown > 0) player.parryCooldown -= dt;
+            if (player.parryActiveTimer > 0) player.parryActiveTimer -= dt;
+
+            player.isFocused = !!(keys['ShiftLeft'] || keys['ShiftRight']);
+            const spd = player.isFocused ? player.focusSpeed : player.speed;
+            let mx = 0, my = 0;
+            if (keys['ArrowLeft'] || keys['KeyA']) mx -= 1;
+            if (keys['ArrowRight'] || keys['KeyD']) mx += 1;
+            if (keys['ArrowUp'] || keys['KeyW']) my -= 1;
+            if (keys['ArrowDown'] || keys['KeyS']) my += 1;
+
+            if (mx !== 0 && my !== 0) { mx *= 0.7071; my *= 0.7071; }
+            player.x = Math.max(16, Math.min(GAME_W - 16, player.x + mx * spd * dt));
+            player.y = Math.max(45, Math.min(GAME_H - 20, player.y + my * spd * dt));
+
+            for (let i = reflectedOrbs.length - 1; i >= 0; i--) {
+                const orb = reflectedOrbs[i];
+                const ang = Math.atan2(boss.y - orb.y, boss.x - orb.x);
+                orb.x += Math.cos(ang) * 550 * dt;
+                orb.y += Math.sin(ang) * 550 * dt;
+                if (Math.hypot(orb.x - boss.x, orb.y - boss.y) < 32) {
+                    boss.hitFlash = 0.08;
+                    score += 150;
+                    reflectedOrbs.splice(i, 1);
+                }
+            }
+
+            updateBossAI(dt);
+
+            let closeRisk = 0;
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const b = enemyBullets[i];
+                b.age += dt;
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+
+                const dist = Math.hypot(b.x - player.x, b.y - player.y);
+                if (dist < 38 && dist > player.hitboxRadius + 4) closeRisk++;
+
+                if (!b.grazed && dist < b.radius + player.grazeRadius && dist >= b.radius + player.hitboxRadius) {
+                    b.grazed = true;
+                    grazeCount++;
+                    score += 100;
+                    if (player.parryCooldown > 0) player.parryCooldown = Math.max(0, player.parryCooldown - 0.06);
+                    audioEngine.playGrazeSFX();
+                }
+
+                if (dist < b.radius * 0.7 + player.hitboxRadius) {
+                    enemyBullets.splice(i, 1);
+                    handlePlayerHit();
+                }
+
+                if (b.x < -30 || b.x > GAME_W + 30 || b.y < -30 || b.y > GAME_H + 30) enemyBullets.splice(i, 1);
+            }
+
+            if (closeRisk > 0 && player.bombs < player.maxBombs) {
+                player.bombCharge += closeRisk * dt * 0.35;
+                if (player.bombCharge >= 1.0) {
+                    player.bombCharge = 0;
+                    player.bombs = Math.min(player.maxBombs, player.bombs + 1);
+                    addFloatingText(player.x, player.y - 30, '+1 BOMB POR RISK!', '#fde047');
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].x += particles[i].vx * dt;
+                particles[i].y += particles[i].vy * dt;
+                particles[i].life -= dt;
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].y -= 25 * dt;
+                floatingTexts[i].life -= dt;
+                if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            updateHUD();
+        }
+
+        function spawnParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const spd = 30 + Math.random() * 120;
+                particles.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, color, size: 2 + Math.random() * 2.5, life: 0.5 });
+            }
+        }
+
+        function addFloatingText(x, y, text, color) {
+            floatingTexts.push({ x, y, text, color, life: 1.2 });
+        }
+
+        function updateHUD() {
+            document.getElementById('hudScore').textContent = String(score).padStart(8, '0');
+            document.getElementById('hudHighScore').textContent = String(highScore).padStart(8, '0');
+            document.getElementById('hudGraze').textContent = grazeCount;
+
+            const timerEl = document.getElementById('hudSurvivalTimer');
+            if (timerEl) {
+                timerEl.textContent = formatSurvivalClock(survivalRemaining);
+                timerEl.className = survivalRemaining <= 30 ? 'font-mono text-2xl font-bold text-rose-400 animate-pulse' : 'font-mono text-2xl font-bold text-amber-100';
+            }
+
+            const livesEl = document.getElementById('hudLives');
+            livesEl.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const s = document.createElement('span');
+                s.textContent = i < player.lives ? '♥' : '♡';
+                s.className = i < player.lives ? 'text-rose-500' : 'text-stone-700';
+                livesEl.appendChild(s);
+            }
+
+            document.getElementById('hudBombsCount').textContent = `${player.bombs} / ${player.maxBombs}`;
+            const bombsEl = document.getElementById('hudBombs');
+            bombsEl.innerHTML = '';
+            for (let i = 0; i < player.maxBombs; i++) {
+                const s = document.createElement('span');
+                s.textContent = i < player.bombs ? '✦' : '✧';
+                s.className = i < player.bombs ? 'text-amber-300' : 'text-stone-700';
+                bombsEl.appendChild(s);
+            }
+
+            document.getElementById('hudRiskBar').style.width = `${Math.min(100, player.bombs >= player.maxBombs ? 100 : player.bombCharge * 100)}%`;
+            const readyRatio = 1 - (player.parryCooldown / player.parryMaxCooldown);
+            document.getElementById('hudParryBar').style.width = `${Math.round(readyRatio * 100)}%`;
+            const statusEl = document.getElementById('hudParryStatus');
+            if (player.parryCooldown <= 0) {
+                statusEl.textContent = 'PRONTO [SPACE]';
+                statusEl.className = 'text-emerald-400 font-bold';
+            } else {
+                statusEl.textContent = `${player.parryCooldown.toFixed(1)}s`;
+                statusEl.className = 'text-amber-300 font-bold';
+            }
+        }
+
+        function renderGame() {
+            if (activeTab !== 'game') return;
+            gCtx.save();
+            if (screenShake > 0) {
+                gCtx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+            }
+
+            const grad = gCtx.createLinearGradient(0, 0, 0, GAME_H);
+            grad.addColorStop(0, '#06040b');
+            grad.addColorStop(1, '#1e0814');
+            gCtx.fillStyle = grad;
+            gCtx.fillRect(0, 0, GAME_W, GAME_H);
+
+            reflectedOrbs.forEach(s => {
+                gCtx.fillStyle = '#7dd3fc';
+                gCtx.beginPath();
+                gCtx.arc(s.x, s.y, 5, 0, Math.PI * 2);
+                gCtx.fill();
+            });
+
+            drawBossSprite(gCtx, currentBossIdx, boss.x, boss.y, gameTime, 1.1);
+
+            const blink = player.invulnTimer > 0 && Math.floor(player.invulnTimer * 16) % 2 === 0;
+            if (!blink) {
+                drawProtagonistSprite(gCtx, player.x, player.y, gameTime, 1.0, player.isFocused, player.parryActiveTimer > 0 ? (player.parryActiveTimer / 0.45) : 0);
+            }
+
+            enemyBullets.forEach(b => {
+                gCtx.fillStyle = '#ffffff';
+                gCtx.beginPath();
+                gCtx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                gCtx.fill();
+                gCtx.strokeStyle = b.color;
+                gCtx.lineWidth = 2;
+                gCtx.stroke();
+            });
+
+            particles.forEach(p => {
+                gCtx.fillStyle = p.color;
+                gCtx.beginPath();
+                gCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                gCtx.fill();
+            });
+
+            floatingTexts.forEach(ft => {
+                gCtx.font = 'bold 11px "Cinzel", serif';
+                gCtx.textAlign = 'center';
+                gCtx.fillStyle = ft.color;
+                gCtx.fillText(ft.text, ft.x, ft.y);
+            });
+
+            gCtx.restore();
+        }
+
+        let lastTimestamp = 0;
+        function masterLoop(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+            lastTimestamp = timestamp;
+
+            updateAndRenderTrailer(dt);
+            updateGame(dt);
+            renderGame();
+
+            requestAnimationFrame(masterLoop);
+        }
+
+        window.onload = function () {
+            resizeTrailerCanvas();
+            resizeGameCanvas();
+            renderAllGrimoirePortraits();
+            updateHUD();
+            requestAnimationFrame(masterLoop);
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('embed') === '1') {
+                    const hdr = document.querySelector('header');
+                    if (hdr) hdr.style.display = 'none';
+                    document.body.style.backgroundImage = 'none';
+                }
+                const startTab = params.get('tab');
+                if (startTab && ['trailer', 'game', 'grimoire', 'gdd'].includes(startTab)) switchTab(startTab);
+            } catch (e) {}
+        };
+
+        window.addEventListener('resize', () => {
+            resizeTrailerCanvas();
+            resizeGameCanvas();
+        });
+    </script>
+</body>
+</html>
