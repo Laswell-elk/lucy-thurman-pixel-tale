@@ -4,6 +4,7 @@ import { Instagram, Mail } from "lucide-react";
 import { PageHero } from "@/components/site/PageHero";
 import { Button } from "@/components/ui/button";
 import { CREATOR } from "@/lib/game";
+import perfilAsset from "@/assets/criadora-perfil.jpg.asset.json";
 
 export const Route = createFileRoute("/criadora")({
   head: () => ({
@@ -37,8 +38,12 @@ function CreatorPage() {
 
       <section className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 md:grid-cols-5">
         <div className="gothic-frame flex flex-col items-center rounded-2xl p-8 text-center md:col-span-2">
-          <div className="animate-soft-float flex h-36 w-36 items-center justify-center rounded-full border-2 border-gold/60 bg-secondary font-gothic text-5xl text-gold-bright shadow-violet">
-            LT
+          <div className="animate-soft-float h-36 w-36 overflow-hidden rounded-full border-2 border-gold/60 bg-secondary shadow-violet">
+            <img
+              src={perfilAsset.url}
+              alt={`Foto de perfil de ${CREATOR.name}`}
+              className="h-full w-full object-cover"
+            />
           </div>
           <h2 className="mt-6 font-gothic text-2xl text-gold-bright">{CREATOR.name}</h2>
           <p className="font-pixel text-[10px] uppercase tracking-widest text-crimson-bright">Game Developer</p>
