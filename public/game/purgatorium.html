@@ -549,7 +549,112 @@
         function toggleAudio() { audioEngine.toggle(); }
 
         // Sprite Renderers
+        // ===== ATLAS DE SPRITES =====
+        const ATLAS = new Image();
+        let atlasReady = false;
+        ATLAS.onload = () => { atlasReady = true; try { renderAllGrimoirePortraits(); } catch (e) {} };
+        ATLAS.src = 'sprites.png';
+        const PLAYER_FRAMES = { left: [72, 15, 61, 96], idle: [490, 15, 43, 96], right: [892, 15, 61, 96] };
+        const BOSS_FRAMES = [
+            [[151, 128, 145, 157], [439, 128, 145, 157], [726, 128, 147, 157]],
+            [[141, 300, 159, 146], [430, 300, 163, 146], [720, 300, 165, 146]],
+            [[141, 462, 153, 133], [433, 462, 150, 133], [732, 462, 146, 133]]
+        ];
+        const BULLET_ROWS = { gold: [635, 57], blue: [729, 56], violet: [825, 57], red: [933, 57] };
+        // [x, w, rotacionar?]
+        const BULLET_KINDS = {
+            crystal: [17, 20, true], orb: [168, 28, false], needle: [251, 8, true], laser: [344, 11, true],
+            star: [432, 25, false], drop: [533, 16, true], diamond: [625, 19, true], moon: [699, 22, true],
+            sparkle: [792, 19, false], burst: [887, 39, false]
+        };
         function drawProtagonistSprite(ctx, x, y, time, scale = 0.78, isFocused = false, parryFlash = 0) {
+            if (!atlasReady) return drawProtagonistSpriteOld(ctx, x, y, time, scale, isFocused, parryFlash);
+            let f = PLAYER_FRAMES.idle;
+            if (ctx === gCtx && typeof keys !== 'undefined') {
+                if (keys['ArrowLeft'] || keys['KeyA']) f = PLAYER_FRAMES.left;
+                else if (keys['ArrowRight'] || keys['KeyD']) f = PLAYER_FRAMES.right;
+            }
+            const h = 56 * scale, w = f[2] / f[3] * h;
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            const aura = ctx.createRadialGradient(x, y, 2, x, y, 30 * scale);
+            aura.addColorStop(0, parryFlash > 0 ? 'rgba(125,211,252,0.7)' : 'rgba(186,230,253,0.35)');
+            aura.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(x, y, 30 * scale, 0, Math.PI * 2); ctx.fill();
+            ctx.drawImage(ATLAS, f[0], f[1], f[2], f[3], x - w / 2, y - h / 2 + Math.sin(time * 4) * 1.5, w, h);
+            if (isFocused) {
+                ctx.fillStyle = '#fff'; ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            }
+            ctx.restore();
+        }
+        function drawBossSprite(ctx, bossIndex, x, y, time, scale = 1) {
+            if (!atlasReady) return drawBossSpriteOld(ctx, bossIndex, x, y, time, scale);
+            const frames = BOSS_FRAMES[bossIndex] || BOSS_FRAMES[0];
+            const f = frames[Math.floor(time * 5) % 3];
+            const h = 92 * scale, w = f[2] / f[3] * h;
+            const hover = Math.sin(time * 3) * 4 * scale;
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            const glowCol = ['rgba(168,85,247,0.35)', 'rgba(244,63,94,0.35)', 'rgba(251,191,36,0.35)'][bossIndex] || 'rgba(168,85,247,0.35)';
+            const g = ctx.createRadialGradient(x, y + hover, 4, x, y + hover, h * 0.7);
+            g.addColorStop(0, glowCol); g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y + hover, h * 0.7, 0, Math.PI * 2); ctx.fill();
+            if (ctx === gCtx && typeof boss !== 'undefined' && boss.hitFlash > 0) ctx.filter = 'brightness(2)';
+            ctx.drawImage(ATLAS, f[0], f[1], f[2], f[3], x - w / 2, y - h / 2 + hover, w, h);
+            ctx.restore();
+        }
+        function drawBulletSprite(ctx, b) {
+            const row = BULLET_ROWS[b.palette] || BULLET_ROWS.violet;
+            const k = BULLET_KINDS[b.kind] || BULLET_KINDS.orb;
+            if (!atlasReady) {
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = b.color; ctx.lineWidth = 2; ctx.stroke(); return;
+            }
+            const size = b.radius * (b.kind === 'laser' || b.kind === 'needle' ? 5.5 : b.kind === 'burst' ? 3.2 : 3.4);
+            const w = k[2] ? size * k[1] / row[1] * 1.2 : size, h = size;
+            ctx.save();
+            ctx.translate(b.x, b.y);
+            if (k[2]) ctx.rotate(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+            else if (b.kind === 'star' || b.kind === 'sparkle') ctx.rotate(b.age * 4);
+            ctx.drawImage(ATLAS, k[0], row[0], k[1], row[1], -w / 2, -h / 2, w, h);
+            ctx.restore();
+        }
+        // ===== FUNDO ESPACIAL =====
+        const SPACE_STARS = Array.from({ length: 160 }, () => ({
+            x: Math.random() * 480, y: Math.random() * 600, z: 0.2 + Math.random() * 0.8, tw: Math.random() * 6.28
+        }));
+        function drawSpaceBackground(ctx, W, H, t) {
+            const bg = ctx.createLinearGradient(0, 0, 0, H);
+            bg.addColorStop(0, '#020108'); bg.addColorStop(0.5, '#07051a'); bg.addColorStop(1, '#0b0414');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+            const neb = (cx, cy, r, col) => {
+                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            };
+            const drift = (t * 6) % (H + 400);
+            neb(W * 0.25, ((H * 0.3 + drift) % (H + 400)) - 200, 220, 'rgba(124,58,237,0.22)');
+            neb(W * 0.8, ((H * 0.75 + drift) % (H + 400)) - 200, 200, 'rgba(190,24,93,0.18)');
+            neb(W * 0.6, ((H * 0.05 + drift) % (H + 400)) - 200, 160, 'rgba(56,189,248,0.12)');
+            // planeta distante
+            const py = ((H * 0.6 + t * 3) % (H + 200)) - 100;
+            const pg = ctx.createRadialGradient(W * 0.12 - 10, py - 10, 4, W * 0.12, py, 38);
+            pg.addColorStop(0, '#6d4aa8'); pg.addColorStop(1, '#140a26');
+            ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(W * 0.12, py, 38, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = 'rgba(216,195,158,0.35)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.ellipse(W * 0.12, py, 60, 12, -0.3, 0, Math.PI * 2); ctx.stroke();
+            SPACE_STARS.forEach(s => {
+                const y = (s.y * H / 600 + t * 60 * s.z) % H;
+                const a = 0.4 + 0.6 * Math.abs(Math.sin(t * 2 + s.tw));
+                ctx.fillStyle = `rgba(${s.z > 0.75 ? '255,240,210' : '200,210,255'},${a * s.z})`;
+                const sz = s.z > 0.8 ? 2 : 1;
+                ctx.fillRect(Math.floor(s.x * W / 480), Math.floor(y), sz, sz);
+                if (s.z > 0.93) ctx.fillRect(Math.floor(s.x * W / 480) - 2, Math.floor(y), 5, 1);
+            });
+        }
+
+        function drawProtagonistSpriteOld(ctx, x, y, time, scale = 0.78, isFocused = false, parryFlash = 0) {
             ctx.save();
             ctx.translate(x, y);
             ctx.scale(scale, scale);
@@ -640,7 +745,7 @@
             ctx.restore();
         }
 
-        function drawBossSprite(ctx, bossIndex, x, y, time, scale = 1) {
+        function drawBossSpriteOld(ctx, bossIndex, x, y, time, scale = 1) {
             ctx.save();
             ctx.translate(x, y);
             ctx.scale(scale, scale);
@@ -943,6 +1048,7 @@
             boss.attackTimer = 0.3;
             boss.laserTimer = 1.5;
             boss.staggerTimer = 0;
+            boss.waveIdx = 0; boss.waveClock = 0;
             document.getElementById('stageBannerText').textContent = data.title;
             document.getElementById('hudBossStage').textContent = `${idx + 1} / 3`;
             addFloatingText(GAME_W / 2, 175, data.spellCard, data.accent);
@@ -1074,7 +1180,17 @@
                 length: 600,
                 width: 10,
                 warnTime: 0.8,
-                activeTime: 0.6
+                activeTime: 0.6,
+                kind: opts.kind || 'orb',
+                palette: opts.palette || 'violet',
+                homing: opts.homing || 0,
+                homingTime: opts.homingTime || 0,
+                accel: opts.accel || 0,
+                wave: opts.wave || 0,
+                waveT: Math.random() * 6.28,
+                split: opts.split || 0,
+                splitKind: opts.splitKind || 'sparkle',
+                splitCount: opts.splitCount || 8
             });
         }
 
@@ -1103,22 +1219,112 @@
             boss.attackTimer -= dt;
             boss.spiralAngle += dt * 2.4;
 
+            boss.waveClock = (boss.waveClock || 0) + dt;
+            if (boss.waveClock > 6) {
+                boss.waveClock = 0;
+                boss.waveIdx = (boss.waveIdx || 0) + 1;
+                boss.attackTimer = 0.6;
+            }
             if (boss.attackTimer <= 0) {
-                boss.attackTimer = 0.65 * cfg.rateMult * (boss.staggerTimer > 0 ? 1.5 : 1.0);
-                const count = Math.round(10 * cfg.densityMult);
-                for (let i = 0; i < count; i++) {
-                    const ang = boss.spiralAngle + (i * Math.PI * 2) / count;
-                    spawnEnemyBullet({
-                        type: currentBossIdx === 1 ? 'sphere' : 'circular',
-                        x: boss.x,
-                        y: boss.y,
-                        vx: Math.cos(ang) * 140,
-                        vy: Math.sin(ang) * 140,
-                        color: currentBossIdx === 0 ? '#c084fc' : currentBossIdx === 1 ? '#fb7185' : '#fbbf24'
-                    });
-                }
+                const set = BOSS_WAVES[currentBossIdx];
+                const wave = set[(boss.waveIdx || 0) % set.length];
+                const stagger = boss.staggerTimer > 0 ? 1.5 : 1.0;
+                boss.attackTimer = WAVE_PATTERNS[wave](cfg) * cfg.rateMult * stagger;
             }
         }
+
+        const BOSS_PAL = [['violet', 'blue'], ['red', 'violet'], ['gold', 'blue', 'red', 'violet']];
+        const BOSS_WAVES = [
+            ['spiralRing', 'randomRain', 'aimedFan', 'homingSwarm', 'flower'],
+            ['aimedFan', 'needleCurtain', 'homingSwarm', 'splitBurst', 'sineWall'],
+            ['flower', 'splitBurst', 'homingSwarm', 'randomRain', 'moonCross', 'needleCurtain', 'spiralRing']
+        ];
+        const pal = (i = 0) => { const p = BOSS_PAL[currentBossIdx]; return p[i % p.length]; };
+        const aimAt = () => Math.atan2(player.y - boss.y, player.x - boss.x);
+        const fire = (ang, spd, o) => spawnEnemyBullet(Object.assign({ x: boss.x, y: boss.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd }, o));
+        const WAVE_PATTERNS = {
+            // padronizado: anel em espiral
+            spiralRing(cfg) {
+                const n = Math.round(12 * cfg.densityMult);
+                for (let i = 0; i < n; i++) fire(boss.spiralAngle + i * Math.PI * 2 / n, 130, { kind: 'orb', palette: pal(0), radius: 5 });
+                return 0.55;
+            },
+            // padronizado: flor com duas espirais opostas
+            flower(cfg) {
+                const n = Math.round(6 * cfg.densityMult);
+                for (let i = 0; i < n; i++) {
+                    fire(boss.spiralAngle * 1.6 + i * Math.PI * 2 / n, 120, { kind: 'drop', palette: pal(0), radius: 4.5, accel: 30 });
+                    fire(-boss.spiralAngle * 1.6 + i * Math.PI * 2 / n, 120, { kind: 'diamond', palette: pal(1), radius: 4.5, accel: 30 });
+                }
+                return 0.18;
+            },
+            // mirado: leque de cristais
+            aimedFan(cfg) {
+                const n = Math.round(5 * cfg.densityMult) | 1;
+                const base = aimAt();
+                for (let i = 0; i < n; i++) {
+                    const off = (i - (n - 1) / 2) * 0.16;
+                    fire(base + off, 170, { kind: 'crystal', palette: pal(0), radius: 4.5 });
+                    fire(base + off, 120, { kind: 'crystal', palette: pal(1), radius: 4.5 });
+                }
+                return 0.7;
+            },
+            // aleatório: chuva de estrelas
+            randomRain(cfg) {
+                const n = Math.round(4 * cfg.densityMult);
+                for (let i = 0; i < n; i++) {
+                    spawnEnemyBullet({ x: Math.random() * GAME_W, y: -10, vx: (Math.random() - 0.5) * 50, vy: 80 + Math.random() * 110,
+                        kind: Math.random() < 0.5 ? 'star' : 'sparkle', palette: pal(i), radius: 4.5 });
+                }
+                return 0.16;
+            },
+            // perseguidor: orbes que caçam a Elise
+            homingSwarm(cfg) {
+                const n = Math.round(3 * cfg.densityMult);
+                for (let i = 0; i < n; i++) {
+                    fire(Math.random() * Math.PI * 2, 90, { kind: 'burst', palette: pal(i), radius: 6, homing: 2.2, homingTime: 2.2 });
+                }
+                return 1.1;
+            },
+            // padronizado: cortina de agulhas com brecha
+            needleCurtain(cfg) {
+                const gap = Math.floor(Math.random() * 8);
+                for (let i = 0; i < 12; i++) {
+                    if (i === gap || i === gap + 1) continue;
+                    spawnEnemyBullet({ x: 20 + i * (GAME_W - 40) / 11, y: -10, vx: 0, vy: 100, accel: 90, kind: 'laser', palette: pal(0), radius: 4 });
+                }
+                const a = aimAt();
+                for (let i = -1; i <= 1; i++) fire(a + i * 0.08, 240, { kind: 'needle', palette: pal(1), radius: 3.5 });
+                return 1.0 / Math.max(0.8, cfg.densityMult);
+            },
+            // explosão que se divide em fragmentos
+            splitBurst(cfg) {
+                const n = 3;
+                for (let i = 0; i < n; i++) {
+                    fire(Math.PI / 2 + (i - 1) * 0.6 + (Math.random() - 0.5) * 0.3, 110, { kind: 'burst', palette: pal(0), radius: 8, accel: -40,
+                        split: 1.1, splitKind: 'sparkle', splitCount: Math.round(10 * cfg.densityMult) });
+                }
+                return 1.3;
+            },
+            // ondas senoidais de luas
+            sineWall(cfg) {
+                const n = Math.round(7 * cfg.densityMult);
+                for (let i = 0; i < n; i++) {
+                    fire(Math.PI / 2 + (i - (n - 1) / 2) * 0.22, 110, { kind: 'moon', palette: pal(i), radius: 5, wave: 90 });
+                }
+                return 0.6;
+            },
+            // cruz giratória de luas + cristais
+            moonCross(cfg) {
+                const arms = Math.round(4 * cfg.densityMult);
+                for (let i = 0; i < arms; i++) {
+                    const a = boss.spiralAngle * 0.9 + i * Math.PI * 2 / arms;
+                    fire(a, 150, { kind: 'moon', palette: pal(0), radius: 5 });
+                    fire(a + 0.12, 110, { kind: 'crystal', palette: pal(1), radius: 4.5 });
+                }
+                return 0.12;
+            }
+        };
 
         function updateGame(dt) {
             if (activeTab !== 'game') return;
@@ -1171,8 +1377,30 @@
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
                 const b = enemyBullets[i];
                 b.age += dt;
-                b.x += b.vx * dt;
+                if (b.homing && b.age < b.homingTime) {
+                    const cur = Math.atan2(b.vy, b.vx), tgt = Math.atan2(player.y - b.y, player.x - b.x);
+                    let d = tgt - cur; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+                    const na = cur + Math.max(-b.homing * dt, Math.min(b.homing * dt, d));
+                    const sp = Math.min(220, Math.hypot(b.vx, b.vy) + 40 * dt);
+                    b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp;
+                }
+                if (b.accel) {
+                    const sp = Math.hypot(b.vx, b.vy) || 1, ns = Math.max(20, sp + b.accel * dt);
+                    b.vx *= ns / sp; b.vy *= ns / sp;
+                }
+                let wx = 0;
+                if (b.wave) wx = Math.cos(b.age * 4 + b.waveT) * b.wave * dt;
+                b.x += b.vx * dt + wx;
                 b.y += b.vy * dt;
+                if (b.split && b.age >= b.split) {
+                    for (let k = 0; k < b.splitCount; k++) {
+                        const a = k * Math.PI * 2 / b.splitCount + b.age;
+                        spawnEnemyBullet({ x: b.x, y: b.y, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, kind: b.splitKind, palette: b.palette, radius: 4 });
+                    }
+                    spawnParticles(b.x, b.y, b.color, 8);
+                    enemyBullets.splice(i, 1);
+                    continue;
+                }
 
                 const dist = Math.hypot(b.x - player.x, b.y - player.y);
                 if (dist < 38 && dist > player.hitboxRadius + 4) closeRisk++;
@@ -1280,11 +1508,7 @@
                 gCtx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
             }
 
-            const grad = gCtx.createLinearGradient(0, 0, 0, GAME_H);
-            grad.addColorStop(0, '#06040b');
-            grad.addColorStop(1, '#1e0814');
-            gCtx.fillStyle = grad;
-            gCtx.fillRect(0, 0, GAME_W, GAME_H);
+            drawSpaceBackground(gCtx, GAME_W, GAME_H, gameTime);
 
             reflectedOrbs.forEach(s => {
                 gCtx.fillStyle = '#7dd3fc';
@@ -1300,15 +1524,7 @@
                 drawProtagonistSprite(gCtx, player.x, player.y, gameTime, 1.0, player.isFocused, player.parryActiveTimer > 0 ? (player.parryActiveTimer / 0.45) : 0);
             }
 
-            enemyBullets.forEach(b => {
-                gCtx.fillStyle = '#ffffff';
-                gCtx.beginPath();
-                gCtx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-                gCtx.fill();
-                gCtx.strokeStyle = b.color;
-                gCtx.lineWidth = 2;
-                gCtx.stroke();
-            });
+            enemyBullets.forEach(b => drawBulletSprite(gCtx, b));
 
             particles.forEach(p => {
                 gCtx.fillStyle = p.color;
