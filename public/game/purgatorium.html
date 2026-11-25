@@ -1022,9 +1022,9 @@
 
         const DIFFICULTY_CONFIG = {
             facil: { label: 'FÁCIL', speedMult: 0.85, densityMult: 0.8, rateMult: 1.2, scoreMult: 1.0 },
-            medio: { label: 'MÉDIO', speedMult: 1.0, densityMult: 1.0, rateMult: 1.0, scoreMult: 1.5 },
-            dificil: { label: 'DIFÍCIL', speedMult: 1.25, densityMult: 1.35, rateMult: 0.78, scoreMult: 2.2 },
-            lunatico: { label: 'LUNÁTICO', speedMult: 1.5, densityMult: 1.75, rateMult: 0.6, scoreMult: 3.5 }
+            medio: { label: 'MÉDIO', speedMult: 1.05, densityMult: 1.15, rateMult: 0.9, scoreMult: 1.5 },
+            dificil: { label: 'DIFÍCIL', speedMult: 1.3, densityMult: 1.5, rateMult: 0.72, scoreMult: 2.2 },
+            lunatico: { label: 'LUNÁTICO', speedMult: 1.55, densityMult: 2.0, rateMult: 0.55, scoreMult: 3.5 }
         };
 
         let difficulty = 'medio';
@@ -1273,7 +1273,11 @@
                 waveT: Math.random() * 6.28,
                 split: opts.split || 0,
                 splitKind: opts.splitKind || 'sparkle',
-                splitCount: opts.splitCount || 8
+                splitCount: opts.splitCount || 8,
+                hold: opts.hold || 0,
+                rvx: (opts.rvx || 0) * cfg.speedMult,
+                rvy: (opts.rvy || 0) * cfg.speedMult,
+                released: !opts.hold
             });
         }
 
@@ -1321,9 +1325,9 @@
 
         const BOSS_PAL = [['violet', 'blue'], ['red', 'violet'], ['gold', 'blue', 'red', 'violet']];
         const BOSS_WAVES = [
-            ['spiralRing', 'randomRain', 'megaLaser', 'aimedFan', 'homingSwarm', 'flower'],
-            ['aimedFan', 'megaLaser', 'needleCurtain', 'homingSwarm', 'splitBurst', 'megaLaser', 'sineWall'],
-            ['flower', 'megaLaser', 'splitBurst', 'homingSwarm', 'randomRain', 'megaLaser', 'moonCross', 'needleCurtain', 'spiralRing']
+            ['spiralRing', 'sealBloom', 'aimedFan', 'conjureRing', 'megaLaser', 'flower', 'wallSweep', 'homingSwarm', 'randomRain'],
+            ['aimedFan', 'wallSweep', 'needleCurtain', 'kagomeCage', 'megaLaser', 'splitBurst', 'conjureRing', 'sineWall', 'homingSwarm'],
+            ['kagomeCage', 'flower', 'sealBloom', 'megaLaser', 'conjureRing', 'splitBurst', 'moonCross', 'wallSweep', 'needleCurtain', 'spiralRing']
         ];
         const pal = (i = 0) => { const p = BOSS_PAL[currentBossIdx]; return p[i % p.length]; };
         const aimAt = () => Math.atan2(player.y - boss.y, player.x - boss.x);
@@ -1341,6 +1345,56 @@
                 audioEngine.playVolleySFX(currentBossIdx, 'laserWarn');
                 for (let i = 0; i < 5; i++) fire(aimAt() + (i - 2) * 0.25, 110, { kind: 'orb', palette: pal(1), radius: 4.5 });
                 return 1.6;
+            },
+            // conjuradas: grade (Kagome) que surge parada e depois desliza como uma gaiola
+            kagomeCage(cfg) {
+                const step = Math.max(20, 30 / Math.sqrt(cfg.densityMult));
+                const cols = 5, rows = 5, kv = pal(0), kh = pal(1);
+                const off = (boss.waveIdx % 2) ? 45 : 0;
+                for (let c = 0; c < cols; c++) {
+                    const x = off + 45 + c * (GAME_W - 90) / (cols - 1), dir = c % 2 ? 1 : -1;
+                    for (let y = 10; y < GAME_H; y += step)
+                        spawnEnemyBullet({ x, y, hold: 1.1 + y / GAME_H * 0.4, rvx: dir * 22, rvy: 14, kind: 'orb', palette: kv, radius: 4.5 });
+                }
+                for (let r2 = 0; r2 < rows; r2++) {
+                    const y = 40 + r2 * (GAME_H * 0.55) / (rows - 1);
+                    for (let x = 10; x < GAME_W; x += step)
+                        spawnEnemyBullet({ x, y, hold: 1.1 + x / GAME_W * 0.4, rvx: 0, rvy: 38, kind: 'orb', palette: kh, radius: 4.5 });
+                }
+                return 6.5;
+            },
+            // conjuradas: círculo ao redor da Elise que se fecha
+            conjureRing(cfg) {
+                const n = Math.round(22 * cfg.densityMult), R = 150, cx = player.x, cy = player.y;
+                for (let i = 0; i < n; i++) {
+                    const a = i * Math.PI * 2 / n;
+                    spawnEnemyBullet({ x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R, hold: 0.9 + i * 0.02,
+                        rvx: -Math.cos(a + 0.35) * 105, rvy: -Math.sin(a + 0.35) * 105, kind: 'crystal', palette: pal(i), radius: 4.5 });
+                }
+                return 1.9;
+            },
+            // conjuradas: selo de anéis em volta da guardiã que se soltam girando
+            sealBloom(cfg) {
+                const n = Math.round(14 * cfg.densityMult);
+                for (let ring = 0; ring < 3; ring++) {
+                    const R = 35 + ring * 30, spin = ring % 2 ? 0.6 : -0.6;
+                    for (let i = 0; i < n; i++) {
+                        const a = i * Math.PI * 2 / n + ring * 0.2;
+                        spawnEnemyBullet({ x: boss.x + Math.cos(a) * R, y: boss.y + Math.sin(a) * R, hold: 0.7 + ring * 0.25,
+                            rvx: Math.cos(a + spin) * 115, rvy: Math.sin(a + spin) * 115, kind: ring === 1 ? 'diamond' : 'orb', palette: pal(ring), radius: 4.5 });
+                    }
+                }
+                return 1.7;
+            },
+            // conjuradas: parede no topo com uma brecha, que despenca
+            wallSweep(cfg) {
+                const gapX = Math.max(40, Math.min(GAME_W - 40, player.x + (Math.random() - 0.5) * 120));
+                const gapW = 46 / Math.sqrt(cfg.densityMult) + 20;
+                for (let x = 8; x < GAME_W; x += 18) {
+                    if (Math.abs(x - gapX) < gapW) continue;
+                    spawnEnemyBullet({ x, y: 20, hold: 0.6, rvx: 0, rvy: 90, accel: 60, kind: 'drop', palette: pal(0), radius: 4.5 });
+                }
+                return 1.1;
             },
             // padronizado: anel em espiral
             spiralRing(cfg) {
@@ -1476,13 +1530,25 @@
                 if (L.t > L.warn + L.active) { megaLasers.splice(i, 1); continue; }
                 if (L.t > L.warn && !L.fired) { L.fired = true; screenShake = Math.max(screenShake, 5); audioEngine.playVolleySFX(currentBossIdx, 'laser'); }
                 const dperp = Math.abs(-(player.x - L.x) * Math.sin(L.ang) + (player.y - L.y) * Math.cos(L.ang));
-                if (L.t > L.warn + 0.1 && dperp < L.w * 0.36 + player.hitboxRadius) handlePlayerHit();
+                const k = L.t - L.warn;
+                if (k > 0) {
+                    const grow = Math.min(1, k / 0.15), fade = Math.min(1, (L.active - k) / 0.25);
+                    if (grow >= 0.9 && fade > 0.5 && dperp < L.w * grow * 0.3 + player.hitboxRadius) handlePlayerHit();
+                }
             }
 
             let closeRisk = 0;
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
                 const b = enemyBullets[i];
                 b.age += dt;
+                if (!b.released) {
+                    if (b.age < b.hold) {
+                        const dh = Math.hypot(b.x - player.x, b.y - player.y);
+                        if (b.age > 0.35 && dh < b.radius * 0.75 + player.hitboxRadius) { enemyBullets.splice(i, 1); handlePlayerHit(); }
+                        continue;
+                    }
+                    b.released = true; b.vx = b.rvx; b.vy = b.rvy;
+                }
                 if (b.homing && b.age < b.homingTime) {
                     const cur = Math.atan2(b.vy, b.vx), tgt = Math.atan2(player.y - b.y, player.x - b.x);
                     let d = tgt - cur; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
@@ -1519,7 +1585,8 @@
                     audioEngine.playGrazeSFX();
                 }
 
-                if (dist < b.radius * 0.6 + player.hitboxRadius) {
+                const coreR = (b.kind === 'laser' || b.kind === 'needle') ? b.radius * 0.55 : b.radius * 0.8;
+                if (dist < coreR + player.hitboxRadius) {
                     enemyBullets.splice(i, 1);
                     handlePlayerHit();
                 }
@@ -1645,7 +1712,10 @@
                 }
                 gCtx.restore();
             });
-            enemyBullets.forEach(b => drawBulletSprite(gCtx, b));
+            enemyBullets.forEach(b => {
+                if (!b.released) { gCtx.save(); gCtx.globalAlpha = Math.min(1, 0.25 + b.age / 0.35); drawBulletSprite(gCtx, b); gCtx.restore(); }
+                else drawBulletSprite(gCtx, b);
+            });
             drawBossExplosions(gCtx, 1 / 60);
             if (bombFx) {
                 bombFx.t += 1 / 60;
