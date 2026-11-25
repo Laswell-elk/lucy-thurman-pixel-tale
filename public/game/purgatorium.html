@@ -461,7 +461,10 @@
                 if (label) label.textContent = this.enabled ? 'ÁUDIO: ON' : 'ÁUDIO: OFF';
             }
             startBGM() {
-                if (!this.music) { this.music = new Audio('soundtrack.mp3'); this.music.loop = true; this.music.volume = 0.45; }
+                const idx = (typeof currentBossIdx !== 'undefined') ? currentBossIdx : 0;
+                const src = ['bgm-seraphina.mp3','bgm-carmilla.mp3','bgm-beatrice.mp3'][idx] || 'bgm-seraphina.mp3';
+                if (!this.music) { this.music = new Audio(); this.music.loop = true; this.music.volume = 0.45; }
+                if (!this.music.src.endsWith(src)) { this.music.src = src; this.music.currentTime = 0; }
                 this.music.play().catch(() => {});
                 return;
                 this.bgmTimer = setInterval(() => {
@@ -480,6 +483,10 @@
                     osc.stop(now + 0.23);
                     this.step++;
                 }, 160);
+            }
+            playBossDefeatSFX() {
+                if (!this.enabled) return;
+                const a = new Audio('boss-defeated.mp3'); a.volume = 0.8; a.play().catch(() => {});
             }
             stopBGM() {
                 if (this.music) this.music.pause();
@@ -623,13 +630,54 @@
             aura.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(x, y, 30 * scale, 0, Math.PI * 2); ctx.fill();
             ctx.drawImage(ATLAS, f[0], f[1], f[2], f[3], x - w / 2, y - h / 2 + Math.sin(time * 4) * 1.5, w, h);
-            if (isFocused) {
+            if (ctx === gCtx) {
+                ctx.globalAlpha = isFocused ? 1 : 0.75;
+                ctx.fillStyle = '#fff'; ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(x, y, (typeof player !== 'undefined' ? player.hitboxRadius : 3.5) + 0.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                ctx.globalAlpha = 1;
+            } else if (isFocused) {
                 ctx.fillStyle = '#fff'; ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
             }
             ctx.restore();
         }
+        const MAGIC_CIRCLES = ['circle-violet.png','circle-crimson.png','circle-gold.png'].map(s => { const i = new Image(); i.src = s; return i; });
+        const BOSS_EXPLOSION_IMG = new Image(); BOSS_EXPLOSION_IMG.src = 'boss-explosion.png';
+        let bossExplosions = [];
+        function spawnBossExplosion(x, y, idx) { bossExplosions.push({ x, y, idx, t: 0 }); }
+        function drawBossExplosions(ctx, dt) {
+            const tint = ['rgba(168,85,247,', 'rgba(244,63,94,', 'rgba(251,191,36,'];
+            bossExplosions = bossExplosions.filter(e => (e.t += dt) < 1.4);
+            bossExplosions.forEach(e => {
+                const k = e.t / 1.4;
+                ctx.save();
+                ctx.imageSmoothingEnabled = false;
+                const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, 60 + k * 260);
+                g.addColorStop(0, tint[e.idx] + (0.6 * (1 - k)) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(e.x, e.y, 60 + k * 260, 0, Math.PI * 2); ctx.fill();
+                if (BOSS_EXPLOSION_IMG.complete && BOSS_EXPLOSION_IMG.naturalWidth) {
+                    for (let i = 0; i < 3; i++) {
+                        const kk = Math.max(0, k - i * 0.12); if (kk <= 0) continue;
+                        const sz = 120 + kk * 420;
+                        ctx.globalAlpha = Math.max(0, 1 - kk) * (i ? 0.6 : 1);
+                        ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(kk * 2 + i);
+                        ctx.drawImage(BOSS_EXPLOSION_IMG, -sz / 2, -sz / 2, sz, sz);
+                        ctx.restore();
+                    }
+                }
+                ctx.restore();
+            });
+        }
         function drawBossSprite(ctx, bossIndex, x, y, time, scale = 1) {
+            const mc = MAGIC_CIRCLES[bossIndex];
+            if (mc && mc.complete && mc.naturalWidth) {
+                const cs = 190 * scale, hv = Math.sin(time * 3) * 4 * scale;
+                ctx.save(); ctx.translate(x, y + hv); ctx.rotate(time * 0.6);
+                ctx.globalAlpha = 0.75 + Math.sin(time * 2) * 0.15;
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(mc, -cs / 2, -cs / 2, cs, cs);
+                ctx.restore();
+            }
             if (!atlasReady) return drawBossSpriteOld(ctx, bossIndex, x, y, time, scale);
             const frames = BOSS_FRAMES[bossIndex] || BOSS_FRAMES[0];
             const f = frames[Math.floor(time * 6) % frames.length];
@@ -994,7 +1042,7 @@
         const player = {
             x: GAME_W / 2,
             y: GAME_H - 95,
-            hitboxRadius: 2.2,
+            hitboxRadius: 3.5,
             grazeRadius: 28,
             speed: 260,
             focusSpeed: 105,
@@ -1072,6 +1120,7 @@
             particles = [];
             floatingTexts = [];
             loadBoss(0);
+            if (audioEngine.enabled) audioEngine.startBGM();
             updateHUD();
         }
 
@@ -1235,9 +1284,11 @@
 
             if (expectedBoss !== currentBossIdx) {
                 screenShake = 12;
-                audioEngine.playBombSFX();
+                spawnBossExplosion(boss.x, boss.y, currentBossIdx);
+                audioEngine.playBossDefeatSFX();
                 enemyBullets = []; megaLasers = [];
                 loadBoss(expectedBoss);
+                if (audioEngine.enabled) audioEngine.startBGM();
             }
 
             boss.moveTimer -= dt;
@@ -1386,7 +1437,7 @@
 
             if (survivalRemaining <= 0) {
                 survivalRemaining = 0;
-                gameState = 'victory';
+                gameState = 'victory'; spawnBossExplosion(boss.x, boss.y, currentBossIdx); audioEngine.playBossDefeatSFX();
                 showEndOverlay(true);
                 return;
             }
@@ -1468,7 +1519,7 @@
                     audioEngine.playGrazeSFX();
                 }
 
-                if (dist < b.radius * 0.7 + player.hitboxRadius) {
+                if (dist < b.radius * 0.6 + player.hitboxRadius) {
                     enemyBullets.splice(i, 1);
                     handlePlayerHit();
                 }
@@ -1595,6 +1646,7 @@
                 gCtx.restore();
             });
             enemyBullets.forEach(b => drawBulletSprite(gCtx, b));
+            drawBossExplosions(gCtx, 1 / 60);
             if (bombFx) {
                 bombFx.t += 1 / 60;
                 const k = bombFx.t / 1.2;
