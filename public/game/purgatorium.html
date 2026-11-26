@@ -1578,7 +1578,7 @@
                 if (!b.released) {
                     if (b.age < b.hold) {
                         const dh = Math.hypot(b.x - player.x, b.y - player.y);
-                        if (b.age > 0.35 && dh < b.radius * 0.75 + player.hitboxRadius) { enemyBullets.splice(i, 1); handlePlayerHit(); }
+                        if (b.age > 0.35 && dh < b.radius * 0.75 + player.hitboxRadius) { enemyBullets.splice(i, 1); handlePlayerHit(); if (i > enemyBullets.length) i = enemyBullets.length; }
                         continue;
                     }
                     b.released = true; b.vx = b.rvx; b.vy = b.rvy;
@@ -1623,6 +1623,8 @@
                 if (dist < coreR + player.hitboxRadius) {
                     enemyBullets.splice(i, 1);
                     handlePlayerHit();
+                    if (i > enemyBullets.length) i = enemyBullets.length;
+                    continue;
                 }
 
                 if (b.x < -30 || b.x > GAME_W + 30 || b.y < -30 || b.y > GAME_H + 30) enemyBullets.splice(i, 1);
@@ -1796,11 +1798,12 @@
             const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
             lastTimestamp = timestamp;
 
-            updateAndRenderTrailer(dt);
-            updateGame(dt);
-            renderGame();
-
             requestAnimationFrame(masterLoop);
+            try {
+                updateAndRenderTrailer(dt);
+                updateGame(dt);
+                renderGame();
+            } catch (err) { console.error('Erro no loop do jogo:', err); }
         }
 
         window.onload = function () {
