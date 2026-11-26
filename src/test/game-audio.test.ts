@@ -82,13 +82,18 @@ describe("Game audio rules", () => {
     expect(engine.music.src).toBe(`bgm-${name}.mp3`);
   });
 
-  it("keeps music louder than effects and reduces boss explosion volume", () => {
+  it("keeps music louder than effects, softens boss explosions and lifts boss 2's theme", () => {
     const { engine } = setup();
     expect(engine.music.volume).toBe(0.65);
     expect(engine.effectsVolume).toBe(0.4);
-    expect(engine.bossDefeatVolume).toBe(0.28);
+    expect(engine.bossDefeatVolume).toBe(0.18);
     expect(engine.music.volume).toBeGreaterThan(engine.effectsVolume);
     expect(engine.bossDefeatVolume).toBeLessThan(0.8);
+
+    engine.selectBoss(1);
+    expect(engine.music.volume).toBe(0.75);
+    engine.selectBoss(2);
+    expect(engine.music.volume).toBe(0.65);
   });
 
   it("plays boss explosions after the music has stopped at victory", async () => {
