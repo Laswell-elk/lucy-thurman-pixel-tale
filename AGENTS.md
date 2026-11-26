@@ -28,3 +28,5 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Keep game music on its own media channel and route synthesized/decoded effects through a limited Web Audio bus; stopping menu music must not cancel death or boss-explosion sounds.
