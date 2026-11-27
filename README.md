@@ -1,14 +1,18 @@
-# Welcome to your Lovable project
+# Lucy Thurman Pixel Tale
+
+com base neste game crie um site para jogalo e disponibilizar o webgame. tbm crie abas com base na estetica do jogo para ver a lore, informações sobre o criador e demais abas profissionais
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://lucy-thurman-pixel-tale.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/dcb92be6-e6ad-4df7-ae6b-afd90b93b4ea).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +24,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
